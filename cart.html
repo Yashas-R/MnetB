@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoltRide — Your Cart</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .cart-page-grid {
+      display: grid; grid-template-columns: 1fr 380px;
+      gap: 3rem; align-items: start;
+    }
+    .cart-table-head {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 40px;
+      gap: 1rem; padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+    }
+    .cart-row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 40px;
+      gap: 1rem; padding: 1.8rem 0;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+    .cart-row-product { display: flex; gap: 1.2rem; align-items: center; }
+    .cart-row-thumb {
+      width: 70px; height: 56px;
+      background: var(--mid);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .cart-row-name { font-size: .9rem; font-weight: 500; }
+    .cart-row-sub { font-size: .72rem; color: var(--muted); margin-top: .2rem; }
+    .cart-row-price { font-size: .9rem; color: var(--volt); }
+    .qty-control { display: flex; align-items: center; gap: .5rem; }
+    .qty-control button {
+      width: 28px; height: 28px;
+      background: var(--mid); border: 1px solid var(--border);
+      color: var(--white); font-size: .9rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s, color .2s;
+    }
+    .qty-control button:hover { border-color: var(--volt); color: var(--volt); }
+    .qty-control span { font-size: .88rem; min-width: 24px; text-align: center; }
+    .remove-btn { background: none; border: none; color: rgba(244,241,235,.25); font-size: 1rem; transition: color .2s; }
+    .remove-btn:hover { color: var(--red); }
+
+    .order-summary {
+      background: var(--mid); border: 1px solid var(--border); padding: 2rem;
+      position: sticky; top: 100px;
+    }
+    .summary-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: .06em; margin-bottom: 1.5rem; }
+    .summary-row { display: flex; justify-content: space-between; padding: .6rem 0; font-size: .85rem; }
+    .summary-row.total { border-top: 1px solid var(--border); margin-top: .5rem; padding-top: 1rem; }
+    .summary-row.total .label { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .05em; }
+    .summary-row.total .val { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--volt); }
+    .summary-label { color: var(--muted); }
+    .promo-form { display: flex; gap: 0; margin: 1.5rem 0; }
+    .promo-input {
+      flex: 1; background: var(--black); border: 1px solid var(--border);
+      border-right: none; color: var(--white);
+      font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      padding: .7rem 1rem; outline: none;
+    }
+    .promo-input:focus { border-color: var(--volt); }
+    .promo-input::placeholder { color: rgba(244,241,235,.2); }
+    .promo-apply {
+      background: var(--volt); color: var(--black); border: none;
+      padding: .7rem 1rem; font-size: .75rem; font-weight: 500;
+      letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+      transition: background .2s;
+    }
+    .promo-apply:hover { background: var(--volt2); }
+    .emi-note { font-size: .72rem; color: var(--muted); line-height: 1.6; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+    .empty-cart {
+      text-align: center; padding: 6rem 2rem;
+      grid-column: 1 / -1;
+    }
+    .empty-cart-icon { font-size: 4rem; margin-bottom: 1.5rem; opacity: .3; }
+    .empty-cart h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: .05em; margin-bottom: 1rem; }
+    .empty-cart p { color: var(--muted); margin-bottom: 2rem; }
+
+    .trust-badges { display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
+    .trust-badge { display: flex; gap: .5rem; align-items: center; font-size: .72rem; color: var(--muted); }
+    .trust-badge span:first-child { font-size: 1rem; }
+
+    @media (max-width: 900px) {
+      .cart-page-grid { grid-template-columns: 1fr; }
+      .cart-table-head { display: none; }
+      .cart-row { grid-template-columns: 1fr; gap: .8rem; }
+      .cart-row-product { flex-direction: row; }
+      .order-summary { position: static; }
+    }
+  </style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="toast" id="toast"></div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span class="accent">VOLT</span>RIDE</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="bikes.html">Bikes</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cartCount">0</span></button>
+    <button class="nav-hamburger" onclick="openMobileMenu()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu"><button class="mobile-close" onclick="closeMobileMenu()">✕</button><a href="index.html" onclick="closeMobileMenu()">Home</a><a href="bikes.html" onclick="closeMobileMenu()">Bikes</a><a href="about.html" onclick="closeMobileMenu()">About</a><a href="contact.html" onclick="closeMobileMenu()">Contact</a></div>
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer"><div class="cart-head"><h3>Cart</h3><button class="cart-close" onclick="closeCart()">✕</button></div><div class="cart-body" id="cartBody"></div><div class="cart-foot"><div class="cart-total"><span class="cart-total-label">Total</span><span class="cart-total-price" id="cartTotal">₹0</span></div><button class="btn btn-volt" style="width:100%;justify-content:center" onclick="checkout()">Checkout →</button></div></div>
+
+<div class="page-wrap">
+  <div class="page-hero" style="padding-bottom:2rem">
+    <div class="breadcrumb"><a href="index.html">Home</a> / <span>Cart</span></div>
+    <h1 class="page-hero-title anim-fadeup" style="font-size:clamp(2.5rem,5vw,5rem)">Your <span style="color:var(--volt)">Cart</span></h1>
+  </div>
+
+  <section class="section" style="padding-top:2rem">
+    <div class="cart-page-grid" id="cartPageWrap">
+      <!-- filled by JS -->
+    </div>
+  </section>
+
+  <!-- RECOMMENDED -->
+  <section class="section" style="background:var(--mid);padding-top:4rem;padding-bottom:4rem">
+    <div class="section-header"><h2 class="section-title">You Might Also <span class="accent">Like</span></h2><a href="bikes.html" class="btn btn-outline btn-sm">All Bikes →</a></div>
+    <div class="products-grid">
+      <div class="product-card" data-category="urban">
+        <span class="tag tag-filled-volt" style="margin-bottom:1rem">Popular</span>
+        <div class="card-img" style="font-size:4rem;color:var(--volt)">🚲</div>
+        <div class="card-name">VOLT URBAN X1</div>
+        <div class="card-spec">250W · 60km · 25kg</div>
+        <div class="card-footer">
+          <div class="card-price">₹89,999</div>
+          <button class="card-add btn" onclick="VoltCart.add('VOLT URBAN X1',89999); renderCartPage(); showToast('⚡ Added!')">+</button>
+        </div>
+      </div>
+      <div class="product-card">
+        <span class="tag tag-orange" style="margin-bottom:1rem">Trail</span>
+        <div class="card-img" style="font-size:4rem;color:#ff9500">⛰️</div>
+        <div class="card-name">APEX TRAIL PRO</div>
+        <div class="card-spec">500W · 80km · 28kg</div>
+        <div class="card-footer">
+          <div class="card-price" style="color:#ff9500">₹1,39,999</div>
+          <button class="card-add btn" style="background:#ff9500" onclick="VoltCart.add('APEX TRAIL PRO',139999,'#ff9500','⛰️'); renderCartPage(); showToast('⛰️ Added!')">+</button>
+        </div>
+      </div>
+      <div class="product-card">
+        <span class="tag tag-red" style="margin-bottom:1rem">Limited</span>
+        <div class="card-img" style="font-size:4rem;color:var(--red)">🏎️</div>
+        <div class="card-name">PHANTOM GT-R</div>
+        <div class="card-spec">1000W · 100km · 26kg</div>
+        <div class="card-footer">
+          <div class="card-price" style="color:var(--red)">₹2,49,999</div>
+          <button class="card-add btn" style="background:var(--red)" onclick="VoltCart.add('PHANTOM GT-R',249999,'var(--red)','🏎️'); renderCartPage(); showToast('🏎️ Added!')">+</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-brand"><a class="nav-logo" href="index.html"><span class="accent">VOLT</span>RIDE</a><p>Premium electric bicycles for the modern Indian rider.</p></div>
+      <div class="footer-col"><h4>Bikes</h4><ul><li><a href="bikes.html">All Bikes</a></li></ul></div>
+      <div class="footer-col"><h4>Support</h4><ul><li><a href="contact.html">Contact</a></li><li><a href="#">Returns</a></li></ul></div>
+      <div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><p>© 2025 VoltRide Pvt. Ltd.</p><p><a href="#">Privacy</a> · <a href="#">Terms</a></p></div>
+  </footer>
+</div>
+
+<script src="script.js"></script>
+<script>
+function renderCartPage() {
+  const wrap = document.getElementById('cartPageWrap');
+  const items = VoltCart.get();
+
+  if (items.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-cart">
+        <div class="empty-cart-icon">🛒</div>
+        <h2>Your Cart is Empty</h2>
+        <p>Looks like you haven't added any bikes yet.</p>
+        <a href="bikes.html" class="btn btn-volt btn-lg">Shop All Bikes →</a>
+      </div>`;
+    return;
+  }
+
+  const subtotal = VoltCart.total();
+  const shipping = subtotal >= 100000 ? 0 : 2500;
+  const gst = Math.round(subtotal * 0.18);
+  const total = subtotal + shipping;
+
+  const rowsHtml = items.map((item, i) => `
+    <div class="cart-row">
+      <div class="cart-row-product">
+        <div class="cart-row-thumb" style="color:${item.color}">${item.emoji}</div>
+        <div>
+          <div class="cart-row-name">${item.name}</div>
+          <div class="cart-row-sub">Electric Bicycle</div>
+        </div>
+      </div>
+      <div class="cart-row-price">₹${item.price.toLocaleString('en-IN')}</div>
+      <div class="qty-control">
+        <button onclick="VoltCart.changeQty(${i},-1); renderCartPage()">−</button>
+        <span>${item.qty}</span>
+        <button onclick="VoltCart.changeQty(${i},1); renderCartPage()">+</button>
+      </div>
+      <div class="cart-row-price">₹${(item.price*item.qty).toLocaleString('en-IN')}</div>
+      <button class="remove-btn" onclick="VoltCart.remove(${i}); renderCartPage(); showToast('Item removed')">✕</button>
+    </div>`).join('');
+
+  wrap.innerHTML = `
+    <div>
+      <div class="cart-table-head">
+        <span>Product</span><span>Price</span><span>Quantity</span><span>Total</span><span></span>
+      </div>
+      ${rowsHtml}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2rem;flex-wrap:wrap;gap:1rem">
+        <a href="bikes.html" class="btn btn-outline btn-sm">← Continue Shopping</a>
+        <button class="btn btn-dark btn-sm" onclick="VoltCart.clear(); renderCartPage(); showToast('Cart cleared')">Clear Cart</button>
+      </div>
+    </div>
+    <div class="order-summary">
+      <div class="summary-title">Order Summary</div>
+      <div class="summary-row"><span class="summary-label">Subtotal</span><span>₹${subtotal.toLocaleString('en-IN')}</span></div>
+      <div class="summary-row"><span class="summary-label">Shipping</span><span>${shipping === 0 ? '<span style="color:var(--volt)">FREE</span>' : '₹' + shipping.toLocaleString('en-IN')}</span></div>
+      <div class="summary-row"><span class="summary-label">GST (18%)</span><span>Included</span></div>
+      <div class="summary-row total"><span class="label">Total</span><span class="val">₹${total.toLocaleString('en-IN')}</span></div>
+
+      <div class="promo-form">
+        <input class="promo-input" id="promoCode" type="text" placeholder="Promo code"/>
+        <button class="promo-apply" onclick="applyPromo()">Apply</button>
+      </div>
+
+      <button class="btn btn-volt btn-lg" style="width:100%;justify-content:center;margin-top:.5rem" onclick="checkout()">Proceed to Checkout →</button>
+
+      <div class="trust-badges">
+        <div class="trust-badge"><span>🔒</span><span>Secure Checkout</span></div>
+        <div class="trust-badge"><span>↩️</span><span>7-Day Returns</span></div>
+        <div class="trust-badge"><span>📦</span><span>Free Shipping ₹1L+</span></div>
+      </div>
+      <div class="emi-note">
+        💳 <strong style="color:var(--white)">0% EMI available</strong> for 6 months on credit cards. Long-term EMI via Bajaj Finserv & HDFC.
+      </div>
+    </div>`;
+}
+
+function applyPromo() {
+  const code = document.getElementById('promoCode')?.value.trim().toUpperCase();
+  if (code === 'VOLT10') { showToast('✓ 10% discount applied! (Demo only)'); }
+  else if (code === 'FIRSTRIDE') { showToast('✓ Free delivery unlocked! (Demo only)'); }
+  else { showToast('Invalid promo code'); }
+}
+
+document.addEventListener('DOMContentLoaded', renderCartPage);
+</script>
+</body>
+</html>
