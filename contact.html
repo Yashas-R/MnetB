@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoltRide — Contact Us</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .contact-grid {
+      display: grid; grid-template-columns: 1fr 1.4fr;
+      gap: 5rem; align-items: start;
+    }
+    .contact-info { display: flex; flex-direction: column; gap: 2rem; }
+    .contact-block {
+      padding: 2rem; border: 1px solid var(--border);
+      transition: border-color .2s;
+    }
+    .contact-block:hover { border-color: var(--volt); }
+    .contact-block-icon { font-size: 1.5rem; margin-bottom: .8rem; }
+    .contact-block-label {
+      font-size: .68rem; letter-spacing: .15em; text-transform: uppercase;
+      color: var(--volt); margin-bottom: .4rem;
+    }
+    .contact-block-val { font-size: 1rem; line-height: 1.6; }
+    .contact-block-val a { color: var(--white); transition: color .2s; }
+    .contact-block-val a:hover { color: var(--volt); }
+
+    .form-card {
+      background: var(--mid); border: 1px solid var(--border);
+      padding: 3rem;
+    }
+    .form-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem; letter-spacing: .05em;
+      margin-bottom: 2rem;
+    }
+    .form-success {
+      display: none;
+      background: rgba(200,241,53,.1); border: 1px solid var(--volt);
+      padding: 1.5rem; margin-top: 1.5rem;
+      font-size: .88rem; color: var(--volt);
+    }
+    .form-success.show { display: block; }
+
+    .map-placeholder {
+      background: var(--mid); border: 1px solid var(--border);
+      height: 280px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 1rem;
+      color: var(--muted); font-size: .85rem;
+      position: relative; overflow: hidden;
+    }
+    .map-placeholder::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(200,241,53,.05) 0%, transparent 70%);
+    }
+    .map-icon { font-size: 3rem; }
+
+    .service-centres { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5px; background: var(--border); }
+    .centre-card { background: var(--black); padding: 1.8rem; transition: background .3s; }
+    .centre-card:hover { background: var(--mid); }
+    .centre-city { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .05em; color: var(--volt); margin-bottom: .4rem; }
+    .centre-address { font-size: .78rem; color: var(--muted); line-height: 1.6; }
+    .centre-phone { font-size: .75rem; color: var(--white); margin-top: .5rem; }
+
+    @media (max-width: 900px) {
+      .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .service-centres { grid-template-columns: 1fr 1fr; }
+      .form-card { padding: 2rem; }
+    }
+    @media (max-width: 600px) {
+      .service-centres { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="toast" id="toast"></div>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span class="accent">VOLT</span>RIDE</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="bikes.html">Bikes</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html" class="active">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="nav-cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cartCount">0</span></button>
+    <button class="nav-hamburger" onclick="openMobileMenu()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu"><button class="mobile-close" onclick="closeMobileMenu()">✕</button><a href="index.html" onclick="closeMobileMenu()">Home</a><a href="bikes.html" onclick="closeMobileMenu()">Bikes</a><a href="about.html" onclick="closeMobileMenu()">About</a><a href="contact.html" onclick="closeMobileMenu()">Contact</a></div>
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer"><div class="cart-head"><h3>Cart</h3><button class="cart-close" onclick="closeCart()">✕</button></div><div class="cart-body" id="cartBody"></div><div class="cart-foot"><div class="cart-total"><span class="cart-total-label">Total</span><span class="cart-total-price" id="cartTotal">₹0</span></div><button class="btn btn-volt" style="width:100%;justify-content:center" onclick="checkout()">Checkout →</button></div></div>
+
+<div class="page-wrap">
+  <div class="page-hero">
+    <div class="breadcrumb"><a href="index.html">Home</a> / <span>Contact</span></div>
+    <p class="page-hero-eyebrow anim-fadeup">Get In Touch</p>
+    <h1 class="page-hero-title anim-fadeup delay-1">We're <span style="color:var(--volt)">Here</span></h1>
+    <p class="page-hero-sub anim-fadeup delay-2">Questions about a bike? Need service? Just want to say hi? We respond within 4 hours on business days.</p>
+  </div>
+
+  <section class="section">
+    <div class="contact-grid">
+      <!-- INFO COLUMN -->
+      <div class="contact-info reveal">
+        <div class="contact-block">
+          <div class="contact-block-icon">📍</div>
+          <div class="contact-block-label">Headquarters</div>
+          <div class="contact-block-val">VoltRide Pvt. Ltd.<br/>12th Floor, Prestige Tech Park<br/>Marathahalli, Bengaluru — 560 037</div>
+        </div>
+        <div class="contact-block">
+          <div class="contact-block-icon">📞</div>
+          <div class="contact-block-label">Phone</div>
+          <div class="contact-block-val"><a href="tel:+918001234567">+91 800 123 4567</a><br/><span style="font-size:.75rem;color:var(--muted)">Mon–Sat, 9am–7pm IST</span></div>
+        </div>
+        <div class="contact-block">
+          <div class="contact-block-icon">✉️</div>
+          <div class="contact-block-label">Email</div>
+          <div class="contact-block-val"><a href="mailto:hello@voltride.in">hello@voltride.in</a><br/><a href="mailto:service@voltride.in">service@voltride.in</a></div>
+        </div>
+        <div class="contact-block">
+          <div class="contact-block-icon">💬</div>
+          <div class="contact-block-label">WhatsApp Support</div>
+          <div class="contact-block-val"><a href="#">+91 98765 43210</a><br/><span style="font-size:.75rem;color:var(--muted)">24/7 for existing customers</span></div>
+        </div>
+
+        <div class="map-placeholder">
+          <div class="map-icon">🗺️</div>
+          <span>Bengaluru HQ — Prestige Tech Park</span>
+          <a href="https://maps.google.com" target="_blank" class="btn btn-outline btn-sm" style="margin-top:.5rem">Open in Maps →</a>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div class="reveal">
+        <div class="form-card">
+          <div class="form-title">Send a <span class="text-volt">Message</span></div>
+          <form id="contactForm" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">First Name *</label>
+                <input class="form-input" type="text" placeholder="Arjun" required/>
+                <span class="form-error">Required</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Last Name *</label>
+                <input class="form-input" type="text" placeholder="Mehta" required/>
+                <span class="form-error">Required</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input class="form-input" type="email" placeholder="arjun@email.com" required/>
+              <span class="form-error">Required</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input class="form-input" type="tel" placeholder="+91 98765 43210"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subject *</label>
+              <select class="form-select form-input" required>
+                <option value="">Select a topic...</option>
+                <option>Bike Purchase Enquiry</option>
+                <option>Test Ride Request</option>
+                <option>Service & Warranty</option>
+                <option>Spare Parts</option>
+                <option>Fleet / Corporate Order</option>
+                <option>Press & Media</option>
+                <option>Other</option>
+              </select>
+              <span class="form-error">Required</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Which bike are you interested in?</label>
+              <select class="form-select form-input">
+                <option value="">Select a model (optional)</option>
+                <option>VOLT URBAN X1 — ₹89,999</option>
+                <option>APEX TRAIL PRO — ₹1,39,999</option>
+                <option>STORMRIDER S3 — ₹1,89,999</option>
+                <option>HAULER CARGO C1 — ₹1,09,999</option>
+                <option>COMMUTER ELITE E2 — ₹99,999</option>
+                <option>PHANTOM GT-R — ₹2,49,999</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message *</label>
+              <textarea class="form-textarea" placeholder="Tell us how we can help..." required></textarea>
+              <span class="form-error">Required</span>
+            </div>
+            <div class="form-group" style="display:flex;gap:.8rem;align-items:center">
+              <input type="checkbox" id="newsletter" style="accent-color:var(--volt);width:16px;height:16px"/>
+              <label for="newsletter" style="font-size:.78rem;color:var(--muted);cursor:none">Subscribe to VoltRide newsletter</label>
+            </div>
+            <button type="submit" class="btn btn-volt btn-lg" style="width:100%;justify-content:center">Send Message →</button>
+            <div class="form-success" id="formSuccess">✓ Message sent! We'll get back to you within 4 hours.</div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICE CENTRES -->
+  <section class="section" style="background:var(--mid);padding-top:4rem;padding-bottom:4rem">
+    <div class="section-header reveal">
+      <h2 class="section-title">Service <span class="accent">Centres</span></h2>
+      <span style="font-size:.8rem;color:var(--muted)">28 cities across India</span>
+    </div>
+    <div class="service-centres reveal">
+      <div class="centre-card"><div class="centre-city">Bengaluru</div><div class="centre-address">Marathahalli, Whitefield, Koramangala</div><div class="centre-phone">+91 80 1234 5678</div></div>
+      <div class="centre-card"><div class="centre-city">Mumbai</div><div class="centre-address">Andheri West, Powai, Thane</div><div class="centre-phone">+91 22 1234 5678</div></div>
+      <div class="centre-card"><div class="centre-city">Delhi NCR</div><div class="centre-address">Gurugram, Noida, Connaught Place</div><div class="centre-phone">+91 11 1234 5678</div></div>
+      <div class="centre-card"><div class="centre-city">Hyderabad</div><div class="centre-address">Hitech City, Jubilee Hills</div><div class="centre-phone">+91 40 1234 5678</div></div>
+      <div class="centre-card"><div class="centre-city">Pune</div><div class="centre-address">Hinjewadi, Kothrud, Viman Nagar</div><div class="centre-phone">+91 20 1234 5678</div></div>
+      <div class="centre-card"><div class="centre-city">Chennai</div><div class="centre-address">T. Nagar, OMR, Velachery</div><div class="centre-phone">+91 44 1234 5678</div></div>
+    </div>
+  </section>
+
+  <div class="newsletter-strip">
+    <div><h3 class="nl-title">Stay in the <span class="text-volt">Loop</span></h3><p class="nl-sub">New models, exclusive offers, ride tips.</p></div>
+    <div class="nl-form"><input class="nl-input" type="email" id="nlEmail" placeholder="your@email.com"/><button class="nl-btn" onclick="subscribe('nlEmail')">Subscribe</button></div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-brand"><a class="nav-logo" href="index.html"><span class="accent">VOLT</span>RIDE</a><p>Premium electric bicycles for the modern Indian rider.</p></div>
+      <div class="footer-col"><h4>Bikes</h4><ul><li><a href="bikes.html?cat=urban">Urban</a></li><li><a href="bikes.html?cat=trail">Trail</a></li><li><a href="bikes.html?cat=speed">Speed</a></li><li><a href="bikes.html?cat=cargo">Cargo</a></li></ul></div>
+      <div class="footer-col"><h4>Support</h4><ul><li><a href="contact.html">Contact</a></li><li><a href="#">Warranty</a></li><li><a href="#">FAQs</a></li></ul></div>
+      <div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Press</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><p>© 2025 VoltRide Pvt. Ltd.</p><p><a href="#">Privacy</a> · <a href="#">Terms</a></p></div>
+  </footer>
+</div>
+
+<script src="script.js"></script>
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  let valid = true;
+  this.querySelectorAll('[required]').forEach(inp => {
+    const err = inp.parentElement.querySelector('.form-error');
+    if (!inp.value.trim()) { if(err) err.classList.add('show'); valid = false; }
+    else { if(err) err.classList.remove('show'); }
+  });
+  if (valid) {
+    document.getElementById('formSuccess').classList.add('show');
+    this.reset();
+    showToast('✓ Message sent!');
+  }
+});
+</script>
+</body>
+</html>
