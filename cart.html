@@ -426,7 +426,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
+  
+<!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PG5LNXJS"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
@@ -469,6 +470,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     name="voltride-checkout"
     action="thank-you.html"
     method="POST"
+    onsubmit="document.getElementById('ty-overlay').style.display='flex'; return false;"
   >
 
     <div class="grid">
@@ -760,6 +762,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               VoltRide never stores your card details.
             </p>
 
+            <!--
+              THANK YOU OVERLAY
+              Shown via onsubmit above — GTM Form Submission fires FIRST
+              (before return false), so your GTM trigger captures the event
+              and the form URL (action="thank-you.html") is readable by GTM.
+              The overlay prevents actual page navigation so you stay on
+              cart.html for GTM Preview / debugging.
+            -->
+
           </div>
         </div><!-- /card 2 -->
 
@@ -892,6 +903,85 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
      input[name="order_value"] → cart total as number (e.g. 229998)
 ══════════════════════════════════════════════════════════════════
 -->
+
+<!-- ─── THANK YOU OVERLAY ─── -->
+<div id="ty-overlay" style="
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(9,9,9,0.88);
+  backdrop-filter: blur(8px);
+  align-items: center; justify-content: center;
+">
+  <div style="
+    background: #141414;
+    border: 1px solid rgba(200,241,53,0.25);
+    padding: 3.5rem 3rem;
+    max-width: 440px; width: 90%;
+    text-align: center;
+    animation: popIn .35s cubic-bezier(0.34,1.56,0.64,1) both;
+  ">
+    <!-- Checkmark -->
+    <div style="
+      width: 64px; height: 64px; border-radius: 50%;
+      background: #c8f135; color: #090909;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin: 0 auto 1.5rem;
+    ">&#x2713;</div>
+
+    <!-- Heading -->
+    <p style="
+      font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: #c8f135; margin-bottom: 0.6rem;
+    ">Order Received</p>
+    <h2 style="
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.6rem; letter-spacing: 0.04em; line-height: 1;
+      color: #f4f1eb; margin-bottom: 1rem;
+    ">Thank You!</h2>
+    <p style="font-size: 0.88rem; color: rgba(244,241,235,0.55); line-height: 1.7; margin-bottom: 2rem;">
+      Your order has been placed successfully.<br/>
+      We&rsquo;ll send a confirmation to your email shortly.
+    </p>
+
+    <!-- GTM debug note (remove in production) -->
+    <p style="
+      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(200,241,53,0.5); margin-bottom: 1.5rem;
+    ">&#x1F50D; GTM Form Submission fired &mdash; check Preview mode</p>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
+      <a href="index.html" style="
+        background: #c8f135; color: #090909;
+        padding: 0.8rem 1.8rem;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.8rem; font-weight: 500;
+        letter-spacing: 0.1em; text-transform: uppercase;
+        text-decoration: none;
+      ">Back to Home</a>
+      <button
+        onclick="document.getElementById('ty-overlay').style.display='none'"
+        style="
+          background: transparent;
+          border: 1px solid rgba(244,241,235,0.2);
+          color: rgba(244,241,235,0.5);
+          padding: 0.8rem 1.8rem;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.8rem; font-weight: 300;
+          letter-spacing: 0.1em; text-transform: uppercase;
+          cursor: pointer;
+        "
+      >Stay &amp; Debug</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.88) translateY(16px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+</style>
 
 </body>
 </html>
