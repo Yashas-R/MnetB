@@ -426,8 +426,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   </style>
 </head>
 <body>
-  
-<!-- Google Tag Manager (noscript) -->
+  <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PG5LNXJS"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
@@ -468,10 +467,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <form
     id="voltride-checkout"
     name="voltride-checkout"
-    action="thank-you.html"
-    method="POST"
-    onsubmit="document.getElementById('ty-overlay').style.display='flex'; return false;"
+    action="cart.html"
+    method="GET"
   >
+    <!-- Hidden field — when form submits, URL becomes cart.html?success=1 -->
+    <!-- GTM trigger: Page URL contains "success=1" OR Form Submission on voltride-checkout -->
+    <input type="hidden" name="success" value="1"/>
 
     <div class="grid">
 
@@ -762,14 +763,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               VoltRide never stores your card details.
             </p>
 
-            <!--
-              THANK YOU OVERLAY
-              Shown via onsubmit above — GTM Form Submission fires FIRST
-              (before return false), so your GTM trigger captures the event
-              and the form URL (action="thank-you.html") is readable by GTM.
-              The overlay prevents actual page navigation so you stay on
-              cart.html for GTM Preview / debugging.
-            -->
 
           </div>
         </div><!-- /card 2 -->
@@ -904,84 +897,115 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 ══════════════════════════════════════════════════════════════════
 -->
 
-<!-- ─── THANK YOU OVERLAY ─── -->
-<div id="ty-overlay" style="
-  display: none;
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(9,9,9,0.88);
-  backdrop-filter: blur(8px);
-  align-items: center; justify-content: center;
-">
+
+<!-- ═══════════════════════════════════════════════════════
+     THANK YOU SECTION
+     Shown when URL contains ?success=1
+     GTM can trigger on: Page URL contains "success=1"
+     or on Form Submission event for voltride-checkout
+════════════════════════════════════════════════════════ -->
+<div id="ty-section" style="display:none">
   <div style="
-    background: #141414;
-    border: 1px solid rgba(200,241,53,0.25);
-    padding: 3.5rem 3rem;
-    max-width: 440px; width: 90%;
-    text-align: center;
-    animation: popIn .35s cubic-bezier(0.34,1.56,0.64,1) both;
+    max-width:560px; margin:0 auto;
+    padding:5rem 2rem 7rem;
+    text-align:center;
   ">
-    <!-- Checkmark -->
+
+    <!-- Icon ring -->
     <div style="
-      width: 64px; height: 64px; border-radius: 50%;
-      background: #c8f135; color: #090909;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.8rem; margin: 0 auto 1.5rem;
+      width:80px; height:80px; border-radius:50%;
+      border:2px solid #c8f135;
+      display:flex; align-items:center; justify-content:center;
+      margin:0 auto 2rem;
+      font-size:2rem; color:#c8f135;
     ">&#x2713;</div>
 
-    <!-- Heading -->
+    <!-- Eyebrow -->
     <p style="
-      font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase;
-      color: #c8f135; margin-bottom: 0.6rem;
-    ">Order Received</p>
-    <h2 style="
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.6rem; letter-spacing: 0.04em; line-height: 1;
-      color: #f4f1eb; margin-bottom: 1rem;
-    ">Thank You!</h2>
-    <p style="font-size: 0.88rem; color: rgba(244,241,235,0.55); line-height: 1.7; margin-bottom: 2rem;">
-      Your order has been placed successfully.<br/>
-      We&rsquo;ll send a confirmation to your email shortly.
+      font-size:.68rem; letter-spacing:.22em; text-transform:uppercase;
+      color:#c8f135; margin-bottom:.8rem;
+      display:flex; align-items:center; justify-content:center; gap:.5rem;
+    ">
+      <span style="display:inline-block;width:22px;height:1px;background:#c8f135"></span>
+      Order Confirmed
+      <span style="display:inline-block;width:22px;height:1px;background:#c8f135"></span>
     </p>
 
-    <!-- GTM debug note (remove in production) -->
-    <p style="
-      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
-      color: rgba(200,241,53,0.5); margin-bottom: 1.5rem;
-    ">&#x1F50D; GTM Form Submission fired &mdash; check Preview mode</p>
+    <!-- Heading -->
+    <h1 style="
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(3rem,7vw,5.5rem);
+      letter-spacing:.04em; line-height:.92;
+      color:#f4f1eb; margin-bottom:1.5rem;
+    ">Order Placed<br/><span style="color:#c8f135">Successfully</span></h1>
 
-    <!-- Actions -->
-    <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
-      <a href="index.html" style="
-        background: #c8f135; color: #090909;
-        padding: 0.8rem 1.8rem;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.8rem; font-weight: 500;
-        letter-spacing: 0.1em; text-transform: uppercase;
-        text-decoration: none;
-      ">Back to Home</a>
-      <button
-        onclick="document.getElementById('ty-overlay').style.display='none'"
-        style="
-          background: transparent;
-          border: 1px solid rgba(244,241,235,0.2);
-          color: rgba(244,241,235,0.5);
-          padding: 0.8rem 1.8rem;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.8rem; font-weight: 300;
-          letter-spacing: 0.1em; text-transform: uppercase;
-          cursor: pointer;
-        "
-      >Stay &amp; Debug</button>
+    <!-- Body copy -->
+    <p style="
+      font-size:.95rem; color:rgba(244,241,235,.5);
+      line-height:1.8; max-width:400px; margin:0 auto 2.5rem;
+    ">
+      Thank you for choosing VoltRide.
+      A confirmation has been sent to your email.
+      Our team will contact you within&nbsp;24&nbsp;hours to schedule delivery.
+    </p>
+
+    <!-- Order meta row -->
+    <div style="
+      display:inline-flex; gap:2.5rem; flex-wrap:wrap; justify-content:center;
+      border:1px solid rgba(244,241,235,.08);
+      padding:1.2rem 2rem; margin-bottom:2.5rem;
+      background:#141414;
+    ">
+      <div style="text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#c8f135;line-height:1">5–7</div>
+        <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(244,241,235,.35);margin-top:.2rem">Business Days</div>
+      </div>
+      <div style="width:1px;background:rgba(244,241,235,.08)"></div>
+      <div style="text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#c8f135;line-height:1">FREE</div>
+        <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(244,241,235,.35);margin-top:.2rem">Shipping</div>
+      </div>
+      <div style="width:1px;background:rgba(244,241,235,.08)"></div>
+      <div style="text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#c8f135;line-height:1">3 YR</div>
+        <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(244,241,235,.35);margin-top:.2rem">Warranty</div>
+      </div>
     </div>
+
+    <!-- CTA buttons -->
+    <div style="display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap">
+      <a href="index.html" style="
+        background:#c8f135; color:#090909;
+        padding:.9rem 2rem;
+        font-family:'DM Sans',sans-serif; font-size:.82rem;
+        font-weight:500; letter-spacing:.12em; text-transform:uppercase;
+        text-decoration:none;
+        display:inline-block;
+      ">Back to Home</a>
+      <a href="bikes.html" style="
+        background:transparent; color:rgba(244,241,235,.55);
+        border:1px solid rgba(244,241,235,.18);
+        padding:.9rem 2rem;
+        font-family:'DM Sans',sans-serif; font-size:.82rem;
+        font-weight:300; letter-spacing:.12em; text-transform:uppercase;
+        text-decoration:none;
+        display:inline-block;
+      ">Shop More Bikes</a>
+    </div>
+
   </div>
 </div>
 
-<style>
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.88) translateY(16px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
-}
-</style>
+<!-- Show/hide logic: if URL has ?success=1, hide form page, show thank-you -->
+<script>
+  if (window.location.search.indexOf('success=1') !== -1) {
+    document.querySelector('.page').style.display    = 'none';
+    document.getElementById('ty-section').style.display = 'block';
+    // Optional: push to dataLayer for GTM
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: 'order_success', page_type: 'thank_you' });
+  }
+</script>
 
 </body>
 </html>
