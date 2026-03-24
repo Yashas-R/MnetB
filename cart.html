@@ -16,7 +16,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   gtag('js', new Date());
 
   gtag('config', 'G-JZGEN7ZBJ4');
-</script>
+</script>  
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VoltRide — Checkout</title>
@@ -769,37 +769,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       </div><!-- /form column -->
 
-      <!-- ═══════════════════════════════════
-           ORDER SUMMARY SIDEBAR
-           Replace values below server-side
-      ═══════════════════════════════════ -->
+      <!-- ORDER SUMMARY — populated from localStorage by cart-init script below -->
       <aside class="summary">
         <div class="sum-title">Order Summary</div>
 
-        <div class="sum-item">
-          <div>
-            <div class="sum-item-name">VOLT URBAN X1</div>
-            <div class="sum-item-qty">Qty: 1</div>
-          </div>
-          <div class="sum-item-price">&#x20B9;89,999</div>
-        </div>
-        <div class="sum-item">
-          <div>
-            <div class="sum-item-name">APEX TRAIL PRO</div>
-            <div class="sum-item-qty">Qty: 1</div>
-          </div>
-          <div class="sum-item-price">&#x20B9;1,39,999</div>
+        <!-- Dynamic items injected here -->
+        <div id="sum-items">
+          <p style="font-size:.8rem;color:var(--muted);padding:.5rem 0">Loading cart&hellip;</p>
         </div>
 
         <div class="sum-divider"></div>
 
         <div class="sum-row">
           <span class="sum-lbl">Subtotal</span>
-          <span>&#x20B9;2,29,998</span>
+          <span id="sum-subtotal">&mdash;</span>
         </div>
         <div class="sum-row">
           <span class="sum-lbl">Shipping</span>
-          <span class="sum-free">FREE</span>
+          <span id="sum-shipping" class="sum-free">FREE</span>
         </div>
         <div class="sum-row">
           <span class="sum-lbl">GST (18%)</span>
@@ -808,7 +795,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="sum-total">
           <span class="sum-total-lbl">Total</span>
-          <span class="sum-total-val">&#x20B9;2,29,998</span>
+          <span class="sum-total-val" id="sum-total">&mdash;</span>
+        </div>
+
+        <!-- Empty cart fallback -->
+        <div id="sum-empty" style="display:none;text-align:center;padding:1.5rem 0">
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">Your cart is empty.</p>
+          <a href="bikes.html" style="font-size:.75rem;color:var(--volt);text-decoration:none;letter-spacing:.08em;text-transform:uppercase">Browse Bikes &rarr;</a>
         </div>
 
         <p class="sum-note">
@@ -996,15 +989,87 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </div>
 
-<!-- Show/hide logic: if URL has ?success=1, hide form page, show thank-you -->
+<!-- ── Load shared cart engine ── -->
+<script src="script.js"></script>
+
 <script>
-  if (window.location.search.indexOf('success=1') !== -1) {
-    document.querySelector('.page').style.display    = 'none';
-    document.getElementById('ty-section').style.display = 'block';
-    // Optional: push to dataLayer for GTM
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event: 'order_success', page_type: 'thank_you' });
+/* ============================================================
+   CART.HTML — page-specific cart initialisation
+   Reads from localStorage via VoltCart (defined in script.js)
+   and populates the Order Summary sidebar.
+   Also handles the ?success=1 thank-you redirect.
+============================================================ */
+
+// ── Populate Order Summary sidebar from localStorage ──────────
+function populateSummary() {
+  var items    = VoltCart.get();
+  var subtotal = VoltCart.total();
+  var shipping = subtotal >= 100000 ? 0 : 2500;
+  var total    = subtotal + shipping;
+
+  var itemsEl    = document.getElementById('sum-items');
+  var subtotalEl = document.getElementById('sum-subtotal');
+  var shippingEl = document.getElementById('sum-shipping');
+  var totalEl    = document.getElementById('sum-total');
+  var emptyEl    = document.getElementById('sum-empty');
+
+  if (!itemsEl) return;
+
+  if (items.length === 0) {
+    // Show empty state, hide totals
+    itemsEl.innerHTML = '';
+    if (emptyEl)    emptyEl.style.display    = 'block';
+    if (subtotalEl) subtotalEl.textContent   = '—';
+    if (shippingEl) shippingEl.textContent   = '—';
+    if (totalEl)    totalEl.textContent      = '—';
+    return;
   }
+
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Render each cart item
+  itemsEl.innerHTML = items.map(function(item) {
+    return '<div class="sum-item">' +
+      '<div>' +
+        '<div class="sum-item-name">' + item.name + '</div>' +
+        '<div class="sum-item-qty">Qty: ' + item.qty + '</div>' +
+      '</div>' +
+      '<div class="sum-item-price">&#x20B9;' + (item.price * item.qty).toLocaleString('en-IN') + '</div>' +
+    '</div>';
+  }).join('');
+
+  // Totals
+  if (subtotalEl) subtotalEl.textContent = '&#x20B9;' + subtotal.toLocaleString('en-IN');
+  if (totalEl)    totalEl.textContent    = '&#x20B9;' + total.toLocaleString('en-IN');
+  if (shippingEl) {
+    if (shipping === 0) {
+      shippingEl.innerHTML  = '<span class="sum-free">FREE</span>';
+    } else {
+      shippingEl.textContent = '&#x20B9;' + shipping.toLocaleString('en-IN');
+      shippingEl.className   = '';
+    }
+  }
+
+  // Also pre-fill the hidden order_value field for GTM
+  var ovField = document.querySelector('input[name="order_value"]');
+  if (ovField) ovField.value = total;
+}
+
+// ── Show/hide logic: ?success=1 → show thank-you, hide form ───
+if (window.location.search.indexOf('success=1') !== -1) {
+  var pageEl = document.querySelector('.page');
+  var tyEl   = document.getElementById('ty-section');
+  if (pageEl) pageEl.style.display = 'none';
+  if (tyEl)   tyEl.style.display   = 'block';
+  // GTM dataLayer push
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: 'order_success', page_type: 'thank_you' });
+  // Clear cart after successful order
+  VoltCart.clear();
+} else {
+  // Normal page load — render summary
+  populateSummary();
+}
 </script>
 
 </body>
