@@ -4,157 +4,193 @@
 
 'use strict';
 
-// ── Cursor ──────────────────────────────────────────────────
+/* ── Custom Cursor ─────────────────────────────────────────── */
 (function initCursor() {
-  const cursor = document.getElementById('cursor');
+  var cursor = document.getElementById('cursor');
   if (!cursor) return;
-  let mx = 0, my = 0;
-  document.addEventListener('mousemove', e => {
-    mx = e.clientX; my = e.clientY;
-    cursor.style.left = mx + 'px';
-    cursor.style.top  = my + 'px';
+  document.addEventListener('mousemove', function(e) {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top  = e.clientY + 'px';
   });
-  document.addEventListener('mousedown', () => cursor.classList.add('clicking'));
-  document.addEventListener('mouseup',   () => cursor.classList.remove('clicking'));
-  document.querySelectorAll('a, button, [data-hover]').forEach(el => {
-    el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
-    el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+  document.addEventListener('mousedown', function() { cursor.classList.add('clicking'); });
+  document.addEventListener('mouseup',   function() { cursor.classList.remove('clicking'); });
+  document.querySelectorAll('a, button').forEach(function(el) {
+    el.addEventListener('mouseenter', function() { cursor.classList.add('hovered'); });
+    el.addEventListener('mouseleave', function() { cursor.classList.remove('hovered'); });
   });
 })();
 
-// ── Nav scroll shrink ────────────────────────────────────────
+/* ── Nav scroll shrink + active link ───────────────────────── */
 (function initNav() {
-  const nav = document.querySelector('.nav');
+  var nav = document.querySelector('.nav');
   if (!nav) return;
-  window.addEventListener('scroll', () => {
+  window.addEventListener('scroll', function() {
     nav.classList.toggle('scrolled', window.scrollY > 60);
   }, { passive: true });
-
-  // Active link
-  const links = nav.querySelectorAll('.nav-links a');
-  links.forEach(a => {
-    if (a.getAttribute('href') === window.location.pathname.split('/').pop()) {
-      a.classList.add('active');
-    }
+  var current = window.location.pathname.split('/').pop() || 'index.html';
+  nav.querySelectorAll('.nav-links a').forEach(function(a) {
+    if (a.getAttribute('href') === current) a.classList.add('active');
   });
 })();
 
-// ── Mobile menu ──────────────────────────────────────────────
-function openMobileMenu() {
-  document.getElementById('mobileMenu')?.classList.add('open');
+/* ── Mobile menu ────────────────────────────────────────────── */
+function openMobileMenu()  {
+  var m = document.getElementById('mobileMenu');
+  if (m) m.classList.add('open');
 }
 function closeMobileMenu() {
-  document.getElementById('mobileMenu')?.classList.remove('open');
+  var m = document.getElementById('mobileMenu');
+  if (m) m.classList.remove('open');
 }
 
-// ── Cart ─────────────────────────────────────────────────────
-const VoltCart = (() => {
-  let items = JSON.parse(localStorage.getItem('voltride_cart') || '[]');
+/* ══════════════════════════════════════════════════════════════
+   VOLTCART — localStorage cart engine shared across all pages
+   Storage key: 'voltride_cart'  (array of {name,price,qty,color,emoji})
+══════════════════════════════════════════════════════════════ */
+var VoltCart = (function() {
 
-  function save() { localStorage.setItem('voltride_cart', JSON.stringify(items)); }
+  var KEY = 'voltride_cart';
 
-  function get() { return [...items]; }
-
-  function count() { return items.reduce((s, i) => s + i.qty, 0); }
-
-  function total() { return items.reduce((s, i) => s + i.price * i.qty, 0); }
-
-  function add(name, price, color = 'var(--volt)', emoji = '⚡') {
-    const idx = items.findIndex(i => i.name === name);
-    if (idx > -1) { items[idx].qty++; }
-    else { items.push({ name, price, qty: 1, color, emoji }); }
-    save(); render(); updateBadge(); syncCartPage();
+  /* Read fresh from storage every time — avoids stale in-memory state */
+  function _load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
+    catch(e) { return []; }
   }
 
-  function remove(index) {
-    items.splice(index, 1);
-    save(); render(); updateBadge(); syncCartPage();
+  function _save(items) {
+    localStorage.setItem(KEY, JSON.stringify(items));
   }
 
-  function changeQty(index, delta) {
-    items[index].qty += delta;
-    if (items[index].qty < 1) { items.splice(index, 1); }
-    save(); render(); updateBadge(); syncCartPage();
+  /* After any mutation: update badge + drawer + cart page table */
+  function _sync() {
+    _updateBadge();
+    _renderDrawer();
+    /* cart.html defines renderCartPage() — call it if present */
+    if (typeof renderCartPage === 'function') renderCartPage();
   }
 
-  function clear() { items = []; save(); render(); updateBadge(); syncCartPage(); }
-
-  // Re-render the cart.html order summary sidebar if we're on that page
-  function syncCartPage() {
-    if (typeof populateSummary === 'function') populateSummary();
+  /* Nav badge counter */
+  function _updateBadge() {
+    var el = document.getElementById('cartCount');
+    if (el) el.textContent = count();
   }
 
-  function updateBadge() {
-    const badge = document.getElementById('cartCount');
-    if (badge) badge.textContent = count();
-  }
-
-  function render() {
-    const body = document.getElementById('cartBody');
+  /* Slide-out drawer (on every page) */
+  function _renderDrawer() {
+    var body = document.getElementById('cartBody');
     if (!body) return;
+    var items = _load();
     if (items.length === 0) {
       body.innerHTML = '<p class="cart-empty">Your cart is empty.<br><small>Start adding some bikes ⚡</small></p>';
     } else {
-      body.innerHTML = items.map((item, i) => `
-        <div class="cart-item">
-          <div class="cart-item-thumb" style="color:${item.color}">${item.emoji}</div>
-          <div class="cart-item-info">
-            <div class="cart-item-name">${item.name}</div>
-            <div class="cart-item-price">₹${(item.price * item.qty).toLocaleString('en-IN')}</div>
-            <div class="cart-item-qty">
-              <button class="qty-btn" onclick="VoltCart.changeQty(${i}, -1)">−</button>
-              <span class="qty-val">${item.qty}</span>
-              <button class="qty-btn" onclick="VoltCart.changeQty(${i}, 1)">+</button>
-            </div>
-          </div>
-          <button class="cart-item-remove" onclick="VoltCart.remove(${i})">✕</button>
-        </div>
-      `).join('');
+      body.innerHTML = items.map(function(item, i) {
+        return '<div class="cart-item">' +
+          '<div class="cart-item-thumb" style="color:' + item.color + '">' + item.emoji + '</div>' +
+          '<div class="cart-item-info">' +
+            '<div class="cart-item-name">'  + item.name + '</div>' +
+            '<div class="cart-item-price">₹' + (item.price * item.qty).toLocaleString('en-IN') + '</div>' +
+            '<div class="cart-item-qty">' +
+              '<button class="qty-btn" onclick="VoltCart.changeQty(' + i + ',-1)">−</button>' +
+              '<span class="qty-val">' + item.qty + '</span>' +
+              '<button class="qty-btn" onclick="VoltCart.changeQty(' + i + ',1)">+</button>' +
+            '</div>' +
+          '</div>' +
+          '<button class="cart-item-remove" onclick="VoltCart.remove(' + i + ')">✕</button>' +
+        '</div>';
+      }).join('');
     }
-    // total
-    const tp = document.getElementById('cartTotal');
+    var tp = document.getElementById('cartTotal');
     if (tp) tp.textContent = '₹' + total().toLocaleString('en-IN');
   }
 
-  function init() { updateBadge(); render(); syncCartPage(); }
+  /* ── Public API ── */
 
-  return { get, count, total, add, remove, changeQty, clear, render, init, save };
+  function get()   { return _load(); }
+  function count() { return _load().reduce(function(s,i){ return s + i.qty; }, 0); }
+  function total() { return _load().reduce(function(s,i){ return s + i.price * i.qty; }, 0); }
+
+  function add(name, price, color, emoji) {
+    color = color || 'var(--volt)';
+    emoji = emoji || '⚡';
+    var items = _load();
+    var idx   = -1;
+    for (var x = 0; x < items.length; x++) {
+      if (items[x].name === name) { idx = x; break; }
+    }
+    if (idx > -1) { items[idx].qty++; }
+    else          { items.push({ name: name, price: price, qty: 1, color: color, emoji: emoji }); }
+    _save(items);
+    _sync();
+  }
+
+  function remove(index) {
+    var items = _load();
+    items.splice(index, 1);
+    _save(items);
+    _sync();
+  }
+
+  function changeQty(index, delta) {
+    var items = _load();
+    if (!items[index]) return;
+    items[index].qty += delta;
+    if (items[index].qty < 1) items.splice(index, 1);
+    _save(items);
+    _sync();
+  }
+
+  function clear() {
+    _save([]);
+    _sync();
+  }
+
+  function init() {
+    _updateBadge();
+    _renderDrawer();
+  }
+
+  return { get: get, count: count, total: total, add: add, remove: remove, changeQty: changeQty, clear: clear, init: init };
+
 })();
 
-// ── Cart drawer ──────────────────────────────────────────────
+/* ── Cart drawer open / close ───────────────────────────────── */
 function openCart() {
-  document.getElementById('cartOverlay')?.classList.add('open');
-  document.getElementById('cartDrawer')?.classList.add('open');
+  var o = document.getElementById('cartOverlay');
+  var d = document.getElementById('cartDrawer');
+  if (o) o.classList.add('open');
+  if (d) d.classList.add('open');
 }
 function closeCart() {
-  document.getElementById('cartOverlay')?.classList.remove('open');
-  document.getElementById('cartDrawer')?.classList.remove('open');
-}
-function goToCartPage() {
-  window.location.href = 'cart.html';
-}
-function checkout() {
-  if (VoltCart.count() === 0) { showToast('Your cart is empty!'); return; }
-  showToast('Redirecting to payment... ⚡');
-  setTimeout(() => alert('Integrate your payment gateway here (Razorpay, Stripe, PayU)'), 1500);
+  var o = document.getElementById('cartOverlay');
+  var d = document.getElementById('cartDrawer');
+  if (o) o.classList.remove('open');
+  if (d) d.classList.remove('open');
 }
 
-// ── Toast ────────────────────────────────────────────────────
-let toastTimer;
-function showToast(msg, duration = 2800) {
-  const el = document.getElementById('toast');
+/* ── Checkout drawer button → go to cart page ───────────────── */
+function checkout() {
+  if (VoltCart.count() === 0) { showToast('Your cart is empty!'); return; }
+  window.location.href = 'cart.html';
+}
+
+/* ── Toast notification ─────────────────────────────────────── */
+var _toastTimer = null;
+function showToast(msg, duration) {
+  duration = duration || 2800;
+  var el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
   el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { el.classList.remove('show'); }, duration);
 }
 
-// ── Newsletter ───────────────────────────────────────────────
-function subscribe(inputId = 'nlEmail') {
-  const input = document.getElementById(inputId);
+/* ── Newsletter subscribe ───────────────────────────────────── */
+function subscribe(inputId) {
+  inputId = inputId || 'nlEmail';
+  var input = document.getElementById(inputId);
   if (!input) return;
-  const val = input.value.trim();
+  var val = input.value.trim();
   if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
     showToast('⚠️ Enter a valid email address');
     return;
@@ -163,35 +199,35 @@ function subscribe(inputId = 'nlEmail') {
   showToast('✓ Subscribed! Welcome to VoltRide.');
 }
 
-// ── Scroll reveal ────────────────────────────────────────────
+/* ── Scroll reveal ──────────────────────────────────────────── */
 (function initReveal() {
-  const els = document.querySelectorAll('.reveal');
+  var els = document.querySelectorAll('.reveal');
   if (!els.length) return;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
       if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
     });
   }, { threshold: 0.12 });
-  els.forEach(el => obs.observe(el));
+  els.forEach(function(el) { obs.observe(el); });
 })();
 
-// ── Filters (bikes page) ─────────────────────────────────────
+/* ── Filter chips — bikes.html ──────────────────────────────── */
 function initFilters() {
-  const chips = document.querySelectorAll('.filter-chip[data-filter]');
-  const cards = document.querySelectorAll('.product-card[data-category]');
-  const countEl = document.getElementById('filterCount');
+  var chips   = document.querySelectorAll('.filter-chip[data-filter]');
+  var cards   = document.querySelectorAll('.product-card[data-category]');
+  var countEl = document.getElementById('filterCount');
 
   function updateCount() {
-    const visible = [...cards].filter(c => c.style.display !== 'none').length;
-    if (countEl) countEl.textContent = `${visible} bikes`;
+    var visible = Array.from(cards).filter(function(c) { return c.style.display !== 'none'; }).length;
+    if (countEl) countEl.textContent = visible + ' bikes';
   }
 
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      chips.forEach(c => c.classList.remove('active'));
+  chips.forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      chips.forEach(function(c) { c.classList.remove('active'); });
       chip.classList.add('active');
-      const f = chip.dataset.filter;
-      cards.forEach(card => {
+      var f = chip.dataset.filter;
+      cards.forEach(function(card) {
         card.style.display = (f === 'all' || card.dataset.category === f) ? '' : 'none';
       });
       updateCount();
@@ -200,68 +236,49 @@ function initFilters() {
   updateCount();
 }
 
-// ── Tabs ─────────────────────────────────────────────────────
+/* ── Tabs — index.html featured bikes ──────────────────────── */
 function initTabs() {
-  const tabs = document.querySelectorAll('[data-tab-btn]');
-  const panels = document.querySelectorAll('[data-tab-panel]');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
+  var tabs   = document.querySelectorAll('[data-tab-btn]');
+  var panels = document.querySelectorAll('[data-tab-panel]');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      panels.forEach(function(p) { p.classList.remove('active'); });
       tab.classList.add('active');
-      const target = document.querySelector(`[data-tab-panel="${tab.dataset.tabBtn}"]`);
+      var target = document.querySelector('[data-tab-panel="' + tab.dataset.tabBtn + '"]');
       if (target) target.classList.add('active');
     });
   });
 }
 
-// ── Image Gallery (product page) ────────────────────────────
-function initGallery() {
-  const thumbs = document.querySelectorAll('.gallery-thumb');
-  const main   = document.getElementById('galleryMain');
-  if (!thumbs.length || !main) return;
-  thumbs.forEach(thumb => {
-    thumb.addEventListener('click', () => {
-      thumbs.forEach(t => t.classList.remove('active'));
-      thumb.classList.add('active');
-      main.innerHTML = thumb.innerHTML;
+/* ── Accordion — about.html FAQ ─────────────────────────────── */
+function initAccordions() {
+  document.querySelectorAll('.accordion-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item   = btn.closest('.accordion-item');
+      var body   = item.querySelector('.accordion-body');
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.accordion-item').forEach(function(i) {
+        i.classList.remove('open');
+        i.querySelector('.accordion-body').style.maxHeight = null;
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+      }
     });
   });
 }
 
-// ── Range slider ─────────────────────────────────────────────
-function initRangeSliders() {
-  document.querySelectorAll('input[type="range"][data-output]').forEach(range => {
-    const out = document.getElementById(range.dataset.output);
-    if (!out) return;
-    range.addEventListener('input', () => { out.textContent = range.value; });
-  });
-}
-
-// ── Counter animation ────────────────────────────────────────
-function animateCounters() {
-  document.querySelectorAll('[data-count]').forEach(el => {
-    const target = parseInt(el.dataset.count);
-    const suffix = el.dataset.suffix || '';
-    let current  = 0;
-    const step   = Math.ceil(target / 50);
-    const timer  = setInterval(() => {
-      current = Math.min(current + step, target);
-      el.textContent = current.toLocaleString('en-IN') + suffix;
-      if (current >= target) clearInterval(timer);
-    }, 30);
-  });
-}
-
-// ── Contact form validation ──────────────────────────────────
+/* ── Contact form — contact.html ────────────────────────────── */
 function initContactForm() {
-  const form = document.getElementById('contactForm');
+  var form = document.getElementById('contactForm');
   if (!form) return;
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', function(e) {
     e.preventDefault();
-    let valid = true;
-    form.querySelectorAll('[required]').forEach(input => {
-      const err = input.parentElement.querySelector('.form-error');
+    var valid = true;
+    form.querySelectorAll('[required]').forEach(function(input) {
+      var err = input.parentElement.querySelector('.form-error');
       if (!input.value.trim()) {
         if (err) err.classList.add('show');
         valid = false;
@@ -276,33 +293,11 @@ function initContactForm() {
   });
 }
 
-// ── Accordion ────────────────────────────────────────────────
-function initAccordions() {
-  document.querySelectorAll('.accordion-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('.accordion-item');
-      const body = item.querySelector('.accordion-body');
-      const isOpen = item.classList.contains('open');
-      // close all
-      document.querySelectorAll('.accordion-item').forEach(i => {
-        i.classList.remove('open');
-        i.querySelector('.accordion-body').style.maxHeight = null;
-      });
-      if (!isOpen) {
-        item.classList.add('open');
-        body.style.maxHeight = body.scrollHeight + 'px';
-      }
-    });
-  });
-}
-
-// ── Init on DOM ready ────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+/* ── Initialise on DOM ready ────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
   VoltCart.init();
   initFilters();
   initTabs();
-  initGallery();
-  initRangeSliders();
-  initContactForm();
   initAccordions();
+  initContactForm();
 });
